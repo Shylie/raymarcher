@@ -4,8 +4,40 @@
     <ClInclude Include="rpng.h" />
     <ClInclude Include="utils.h" />
     <ClInclude Include="utils_end.h" />
+    <ClInclude Include="lexer.h" />
+    <ClInclude Include="transpiler.h" />
+    <ClInclude Include="Materials\glass.h">
+      <Filter>Materials</Filter>
+    </ClInclude>
+    <ClInclude Include="Materials\metal.h">
+      <Filter>Materials</Filter>
+    </ClInclude>
+    <ClInclude Include="Materials\none.h">
+      <Filter>Materials</Filter>
+    </ClInclude>
+    <ClInclude Include="Materials\sun.h">
+      <Filter>Materials</Filter>
+    </ClInclude>
+    <ClInclude Include="Materials\wall.h">
+      <Filter>Materials</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="raymarcher.cpp" />
+    <ClCompile Include="lexer.cpp" />
+    <ClCompile Include="transpiler.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Materials">
+      <UniqueIdentifier>{cb1899b6-dc03-4d21-828d-ad0f296e7114}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Scenes">
+      <UniqueIdentifier>{40a394d3-5b37-476f-83b5-f2f330d26531}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <CopyFileToFolders Include="Scenes\demo.txt">
+      <Filter>Scenes</Filter>
+    </CopyFileToFolders>
   </ItemGroup>
 </Project>

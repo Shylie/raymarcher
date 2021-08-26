@@ -1,5 +1,16 @@
-__device__ float Min(float a, float b) { return a < b ? a : b; }
-__device__ float Max(float a, float b) { return a > b ? a : b; }
+#pragma once
+
+#ifndef __device__
+#define __device__
+#endif
+
+#ifndef __CUDA_ARCH__
+#include <cmath>
+#include <cstdio>
+#endif
+
+__device__ inline float Min(float a, float b) { return a < b ? a : b; }
+__device__ inline float Max(float a, float b) { return a > b ? a : b; }
 
 struct xorwow
 {
@@ -28,8 +39,8 @@ struct Vec
 {
 	float c[3];
 
-	__device__ constexpr Vec() : c{ 0.0f, 0.0f, 0.0f } { }
-	__device__ constexpr Vec(float c) : c{ c, c, c } { }
+	__device__ constexpr Vec() : Vec(0.0f) { }
+	__device__ constexpr Vec(float c) : Vec(c, c, c) { }
 	__device__ constexpr Vec(float x, float y, float z) : c{ x, y, z } { }
 
 	__device__ constexpr float X() const { return c[0]; }
@@ -50,6 +61,8 @@ struct Vec
 	VEC_OP_EQ(/);
 
 #undef VEC_OP_EQ
+#define STRINGIFY2(x) #x
+#define STRINGIFY(x) STRINGIFY2(x)
 #define VEC_OP(op) __device__ constexpr Vec operator##op##(Vec v) const { Vec tmp = *this; tmp op##= v; return tmp; }
 
 	VEC_OP(+);
@@ -185,11 +198,4 @@ struct SphereTest
 	}
 };
 
-enum HitType
-{
-	HT_NONE,
-	HT_WALL,
-	HT_METAL,
-	HT_GLASS,
-	HT_SUN
-};
+__device__ extern int March(Vec origin, Vec direction, Vec& hitPos, Vec& hitNorm);

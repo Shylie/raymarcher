@@ -12,6 +12,7 @@
 #include "rpng.h"
 
 #include "utils.h"
+#include "transpiler.h"
 
 #define VALID_FILENAME_CHARS "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890._"
 #define VALID_FILEPATH_CHARS ":/\\"
@@ -30,6 +31,7 @@ int main(int argc, char** argv)
 	for (int i = 1; i < argc; i++)
 	{
 		int tmp;
+		float tx, ty, tz;
 
 		if (sscanf(argv[i], "-w=%u", &tmp) && tmp > 0)
 		{
@@ -43,23 +45,17 @@ int main(int argc, char** argv)
 		{
 			samples = tmp;
 		}
-		else if (sscanf(argv[i], "-px=%f", &px))
+		else if (sscanf(argv[i], "-p=%f,%f,%f", &tx, &ty, &tz) == 3)
 		{
+			px = tx;
+			py = ty;
+			pz = tz;
 		}
-		else if (sscanf(argv[i], "-py=%f", &py))
+		else if (sscanf(argv[i], "-g=%f,%f,%f", &tx, &ty, &tz) == 3)
 		{
-		}
-		else if (sscanf(argv[i], "-pz=%f", &pz))
-		{
-		}
-		else if (sscanf(argv[i], "-gx=%f", &gx))
-		{
-		}
-		else if (sscanf(argv[i], "-gy=%f", &gy))
-		{
-		}
-		else if (sscanf(argv[i], "-gz=%f", &gz))
-		{
+			gx = tx;
+			gy = ty;
+			gz = tz;
 		}
 		else if (sscanf(argv[i], "-k"))
 		{
@@ -80,7 +76,6 @@ int main(int argc, char** argv)
 	char* log = nullptr;
 	char* ptx = nullptr;
 	const char* loweredName;
-	nvrtcProgram prog;
 
 	CUdevice cuDevice;
 	CUcontext context;
@@ -98,58 +93,28 @@ int main(int argc, char** argv)
 			fseek(fp, 0, SEEK_END);
 			size_t len = ftell(fp);
 			fseek(fp, 0, SEEK_SET);
-			buffer = new char[len];
+			buffer = new char[len + 1]{ '\0' };
 			fread(buffer, sizeof(char), len, fp);
 			fclose(fp);
 		}
 		else
 		{
-			printf("Could not open file %s", sfname);
+			printf("Could not open file %s\n", sfname);
 			cuCtxDestroy(context);
 			return -1;
 		}
 
-		nvrtcCreateProgram(&prog, buffer, "QuerySceneUserFn", 0, nullptr, nullptr);
-
-		nvrtcAddNameExpression(prog, "Render");
-
-		char versionOption[20]{ '\0' };
-
-		int major;
-		int minor;
-		cuDeviceGetAttribute(&major, CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MAJOR, cuDevice);
-		cuDeviceGetAttribute(&minor, CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MINOR, cuDevice);
-
-		sprintf(versionOption, "-arch=sm_%d%d", major, minor);
-		const char* opts[] = { "-std=c++14", "-I.", "-I../raymarcher", versionOption };
-		printf("sm_%d.%d\n", major, minor);
-		nvrtcResult result = nvrtcCompileProgram(prog, sizeof(opts) / sizeof(*opts), opts); // crashes?
-
-		size_t logSize;
-		nvrtcGetProgramLogSize(prog, &logSize);
-		log = new char[logSize];
-		nvrtcGetProgramLog(prog, log);
-
-		if (result != NVRTC_SUCCESS)
+		Transpiler transpiler(buffer);
+		if (!transpiler.Transpile(cuDevice, cuModule, loweredName))
 		{
-			printf("Invalid ptx code generated from file %s:\n%s", sfname, log);
-			nvrtcDestroyProgram(&prog);
-			delete[] ptx;
-			delete[] log;
+			printf("An error occured during transpilation.\n");
 			cuCtxDestroy(context);
 			return -1;
 		}
-
-		size_t ptxSize;
-		nvrtcGetPTXSize(prog, &ptxSize);
-		ptx = new char[ptxSize];
-		nvrtcGetPTX(prog, ptx);
-
-		nvrtcGetLoweredName(prog, "Render", &loweredName);
 	}
 	else
 	{
-		printf("No input scene file");
+		printf("No input scene file\n");
 		cuCtxDestroy(context);
 		return -1;
 	}
@@ -158,23 +123,9 @@ int main(int argc, char** argv)
 	Vec goal = !(Vec(gx, gy, gz) - position);
 	Vec left = !Vec(goal.Z(), 0, -goal.X()) / width;
 	Vec up = goal ^ left;
-	
-	CUjit_option jitOpts[] = { CU_JIT_ERROR_LOG_BUFFER, CU_JIT_ERROR_LOG_BUFFER_SIZE_BYTES, CU_JIT_LOG_VERBOSE };
-	char* errBuf = new char[4096];
-	void* arr[] = { errBuf, (void*)4096, (void*)true };
-	CUresult err = cuModuleLoadDataEx(&cuModule, ptx, 3, jitOpts, arr);
-	if (err != CUDA_SUCCESS)
-	{
-		printf("Error:\n%s", errBuf);
-		delete[] errBuf;
-		delete[] ptx;
-		delete[] log;
-		cuCtxDestroy(context);
-		return -1;
-	}
+
 	CUfunction render;
 	cuModuleGetFunction(&render, cuModule, loweredName); // mangled name?
-	delete[] errBuf;
 
 	CUdeviceptr deviceCols;
 	cuMemAlloc(&deviceCols, width * height * sizeof(Vec));
@@ -187,9 +138,9 @@ int main(int argc, char** argv)
 	Vec* cols = new Vec[width * height];
 
 	cuEventRecord(start, nullptr);
-	cuLaunchKernel(render, 256, 256, 1, 16, 16, 1, 0, nullptr, args, nullptr);
-	cuEventRecord(stop, nullptr);
-	cuMemcpyDtoH(cols, deviceCols, width * height * sizeof(Vec));
+	CUresult res = cuLaunchKernel(render, 256, 256, 1, 16, 16, 1, 0, nullptr, args, nullptr);
+	res = cuEventRecord(stop, nullptr);
+	res = cuMemcpyDtoH(cols, deviceCols, width * height * sizeof(Vec));
 	cuEventSynchronize(stop);
 
 	float ms;
@@ -226,8 +177,6 @@ int main(int argc, char** argv)
 
 	cuModuleUnload(cuModule);
 	cuCtxDestroy(context);
-
-	nvrtcDestroyProgram(&prog);
 
 	if (keepOpen)
 	{

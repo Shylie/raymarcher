@@ -75,7 +75,7 @@
       </Command>
     </PostBuildEvent>
     <PreBuildEvent>
-      <Command>xcopy /d /y $(ProjectDir)utils*.h $(OutDir)</Command>
+      <Command>xcopy /d /y $(ProjectDir)utils*.h $(OutDir) &amp;&amp; xcopy /d /y $(ProjectDir)materials\*.* $(OutDir)</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -106,16 +106,28 @@
       </Command>
     </PostBuildEvent>
     <PreBuildEvent>
-      <Command>xcopy /d /y $(ProjectDir)utils*.h $(OutDir)</Command>
+      <Command>xcopy /d /y $(ProjectDir)utils*.h $(OutDir) &amp;&amp; xcopy /d /y $(ProjectDir)materials\*.* $(OutDir)</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="lexer.cpp" />
     <ClCompile Include="raymarcher.cpp" />
+    <ClCompile Include="transpiler.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="lexer.h" />
+    <ClInclude Include="Materials\glass.h" />
+    <ClInclude Include="Materials\metal.h" />
+    <ClInclude Include="Materials\none.h" />
+    <ClInclude Include="Materials\sun.h" />
+    <ClInclude Include="Materials\wall.h" />
     <ClInclude Include="rpng.h" />
+    <ClInclude Include="transpiler.h" />
     <ClInclude Include="utils.h" />
     <ClInclude Include="utils_end.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <CopyFileToFolders Include="Scenes\demo.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
