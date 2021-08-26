@@ -7,27 +7,27 @@ sdf box,sunbox
 > 2.5,5,2.5
 
 // sunbox cover outer ring
-sdf box,sunboxcover
+sdf,box,sunboxcover
 > -2.3,4.5,-2.3
 > 2.3,4.7,2.3
 
 // sunbox cover inner ring (used to cut out the hole)
-sdf box,sunboxcovercutout
+sdf,box,sunboxcovercutout
 > -1.5,4.4,-1.5
 > 1.5,4.8,1.5
 
 // the wall / room
-sdf box,wallbox
+sdf,box,wallbox
 > -7,-1,-7
 > 7,5.1,7
 
 // glass sphere shape
-sdf sph,glasssph
+sdf,sph,glasssph
 > 0,1.1,1
 > 0.5
 
 // metal sphere shape
-sdf sph,metalsph
+sdf,sph,metalsph
 > 1,1.1,0
 > 0.5
 
