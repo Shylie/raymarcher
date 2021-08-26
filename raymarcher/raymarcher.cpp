@@ -27,6 +27,7 @@ int main(int argc, char** argv)
 	char sfname[256] = "";
 
 	bool keepOpen = false;
+	int chunk = 0;
 
 	for (int i = 1; i < argc; i++)
 	{
@@ -57,9 +58,12 @@ int main(int argc, char** argv)
 			gy = ty;
 			gz = tz;
 		}
-		else if (sscanf(argv[i], "-k"))
+		else if (strlen(argv[i]) == strlen("-k") && strncmp(argv[i], "-k", strlen("-k")) == 0)
 		{
 			keepOpen = true;
+		}
+		else if (sscanf(argv[i], "-c=%u", &chunk))
+		{
 		}
 		else if (sscanf(argv[i], "-f=%255[" VALID_FILENAME_CHARS "]", fname))
 		{
@@ -124,12 +128,26 @@ int main(int argc, char** argv)
 	Vec left = !Vec(goal.Z(), 0, -goal.X()) / width;
 	Vec up = goal ^ left;
 
+	int sx = 0;
+	int sy = 0;
+	int ex, ey;
+	if (chunk)
+	{
+		ex = width < chunk ? width : chunk;
+		ey = height < chunk ? height : chunk	;
+	}
+	else
+	{
+		ex = width;
+		ey = height;
+	}
+
 	CUfunction render;
 	cuModuleGetFunction(&render, cuModule, loweredName); // mangled name?
 
 	CUdeviceptr deviceCols;
 	cuMemAlloc(&deviceCols, width * height * sizeof(Vec));
-	void* args[] = { &deviceCols, &width, &height, &samples, &position, &goal, &left, &up };
+	void* args[] = { &deviceCols, &width, &height, &samples, &position, &goal, &left, &up, &sx, &sy, &ex, &ey };
 
 	CUevent start, stop;
 	cuEventCreate(&start, CU_EVENT_DEFAULT);
@@ -138,9 +156,59 @@ int main(int argc, char** argv)
 	Vec* cols = new Vec[width * height];
 
 	cuEventRecord(start, nullptr);
-	CUresult res = cuLaunchKernel(render, 256, 256, 1, 16, 16, 1, 0, nullptr, args, nullptr);
-	res = cuEventRecord(stop, nullptr);
-	res = cuMemcpyDtoH(cols, deviceCols, width * height * sizeof(Vec));
+
+	if (chunk)
+	{
+		CUstream streams[8];
+		for (int i = 0; i < sizeof(streams) / sizeof(*streams); i++)
+		{
+			cuStreamCreate(&streams[i], CU_STREAM_DEFAULT);
+		}
+		int streamIndex = 0;
+		do
+		{
+			do
+			{
+				cuLaunchKernel(render, 256, 256, 1, 16, 16, 1, 0, streams[streamIndex++], args, nullptr);
+				sy += chunk;
+				ey += chunk;
+
+				if (streamIndex == sizeof(streams) / sizeof(*streams))
+				{
+					streamIndex = 0;
+					cuCtxSynchronize();
+				}
+			}
+			while (ey <= height); // misses top row
+
+			// render top row
+			cuLaunchKernel(render, 256, 256, 1, 16, 16, 1, 0, streams[streamIndex++], args, nullptr);
+
+			if (streamIndex == sizeof(streams) / sizeof(*streams))
+			{
+				streamIndex = 0;
+				cuCtxSynchronize();
+			}
+
+			sx += chunk;
+			ex += chunk;
+			sy = 0;
+			ey = height < chunk ? height : chunk;
+		}
+		while (ex <= width);
+
+		for (int i = 0; i < sizeof(streams) / sizeof(*streams); i++)
+		{
+			cuStreamDestroy(streams[i]);
+		}
+	}
+	else
+	{
+		cuLaunchKernel(render, 256, 256, 1, 16, 16, 1, 0, nullptr, args, nullptr);
+	}
+
+	cuEventRecord(stop, nullptr);
+	cuMemcpyDtoH(cols, deviceCols, width * height * sizeof(Vec));
 	cuEventSynchronize(stop);
 
 	float ms;

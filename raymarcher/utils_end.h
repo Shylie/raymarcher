@@ -49,11 +49,11 @@ __device__ Vec Trace(Vec origin, Vec direction, xorwow& random)
 	return color;
 }
 
-__global__ void Render(Vec* cols, int w, int h, int s, Vec position, Vec goal, Vec left, Vec up)
+__global__ void Render(Vec* cols, int w, int h, int s, Vec position, Vec goal, Vec left, Vec up, int sx, int sy, int ex, int ey)
 {
-	for (int i = threadIdx.x + blockIdx.x * blockDim.x; i < w; i += blockDim.x * gridDim.x)
+	for (int i = sx + threadIdx.x + blockIdx.x * blockDim.x; i < ex && i < w; i += blockDim.x * gridDim.x)
 	{
-		for (int j = threadIdx.y + blockIdx.y * blockDim.y; j < h; j += blockDim.y * gridDim.y)
+		for (int j = sy + threadIdx.y + blockIdx.y * blockDim.y; j < ey && j < h; j += blockDim.y * gridDim.y)
 		{
 			xorwow random;
 			random.a = i + 2;
