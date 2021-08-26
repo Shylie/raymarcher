@@ -2,14 +2,14 @@
 decmat,wall,metal,glass,sun
 
 // define shape of sunbox
-sdf box,sunbox
+sdf,box,sunbox
 > -2.5,4.8,-2.5
 > 2.5,5,2.5
 
 // sunbox cover outer ring
 sdf,box,sunboxcover
-> -2.3,4.5,-2.3
-> 2.3,4.7,2.3
+> -2.3,4.55,-2.3
+> 2.3,4.75,2.3
 
 // sunbox cover inner ring (used to cut out the hole)
 sdf,box,sunboxcovercutout
@@ -18,17 +18,17 @@ sdf,box,sunboxcovercutout
 
 // the wall / room
 sdf,box,wallbox
-> -7,-1,-7
+> -7,0.5,-7
 > 7,5.1,7
 
 // glass sphere shape
 sdf,sph,glasssph
-> 0,1.1,1
+> 0,1.2,1
 > 0.5
 
 // metal sphere shape
 sdf,sph,metalsph
-> 1,1.1,0
+> 1,1.2,0
 > 0.5
 
 // define the CSG interactions between the SDFs for the walls
