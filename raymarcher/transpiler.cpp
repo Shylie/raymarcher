@@ -25,6 +25,7 @@ bool Transpiler::Transpile(CUdevice& cuDevice, CUmodule& cuModule, const char*& 
 	do
 	{
 		Consume(Token::Type::SDF, "Expect sdf statement.");
+		Consume(Token::Type::Comma, "Expect comma.");
 		switch (current.type)
 		{
 		case Token::Type::Box: Box(); break;
