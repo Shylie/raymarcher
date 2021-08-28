@@ -30,6 +30,7 @@ bool Transpiler::Transpile(CUdevice& cuDevice, CUmodule& cuModule, const char*& 
 		{
 		case Token::Type::Box: Box(); break;
 		case Token::Type::Sphere: Sphere(); break;
+		case Token::Type::Transform: Transform(); break;
 		default: ErrorAtCurrent("Expect a valid SDF identifier."); break;
 		}
 
@@ -60,23 +61,7 @@ bool Transpiler::Transpile(CUdevice& cuDevice, CUmodule& cuModule, const char*& 
 		{
 			Consume(Token::Type::Param, "Expect param statement (>).");
 			const char* paramStart = current.start;
-			while (current.type == Token::Type::String || current.type == Token::Type::Ampersand || current.type == Token::Type::Pipe || current.type == Token::Type::Minus || current.type == Token::Type::Paren)
-			{
-				Advance();
-				if (previous.type == Token::Type::String)
-				{
-					bool found = false;
-					for (int i = 0; i < sdfs.size(); i++)
-					{
-						if (sdfs[i].length == previous.length && strncmp(sdfs[i].start, previous.start, previous.length) == 0)
-						{
-							found = true;
-							break;
-						}
-					}
-					if (!found) { Error("Undeclared SDF name."); }
-				}
-			};
+			MakeMatInternal();
 			int paramLength = (int)(previous.start - paramStart) + previous.length;
 			mats[idx].paramStart = paramStart;
 			mats[idx].paramLength = paramLength;
@@ -130,44 +115,48 @@ MATERIAL_FUNCTION(none);
 		case SDF::Type::Sphere:
 			transpiledSource += "SphereTest ";
 			break;
+
+		case SDF::Type::Transform:
+			transpiledSource += "TransformTest ";
+			break;
 		}
 		transpiledSource += std::string(sdfs[i].start, sdfs[i].length);
 		transpiledSource += '(';
 		for (int j = 0; j < sdfs[i].params.size() - 1; j++)
 		{
-			std::vector<float>& v = sdfs[i].params[j];
+			std::vector<Token>& v = sdfs[i].params[j];
 			if (v.size() > 1)
 			{
 				transpiledSource += "{ ";
 				for (int k = 0; k < v.size() - 1; k++)
 				{
-					transpiledSource += std::to_string(v[k]);
+					transpiledSource += std::string(v[k].start, v[k].length);
 					transpiledSource += ", ";
 				}
-				transpiledSource += std::to_string(v[v.size() - 1]);
+				transpiledSource += std::string(v[v.size() - 1].start, v[v.size() - 1].length);
 				transpiledSource += " }, ";
 			}
 			else if (v.size() > 0)
 			{
-				transpiledSource += std::to_string(v[0]);
+				transpiledSource += std::string(v[0].start, v[0].length);
 				transpiledSource += ", ";
 			}
 		}
-		std::vector<float>& v = sdfs[i].params[sdfs[i].params.size() - 1];
+		std::vector<Token>& v = sdfs[i].params[sdfs[i].params.size() - 1];
 		if (v.size() > 1)
 		{
 			transpiledSource += "{ ";
 			for (int k = 0; k < v.size() - 1; k++)
 			{
-				transpiledSource += std::to_string(v[k]);
+				transpiledSource += std::string(v[k].start, v[k].length);
 				transpiledSource += ", ";
 			}
-			transpiledSource += std::to_string(v[v.size() - 1]);
+			transpiledSource += std::string(v[v.size() - 1].start, v[v.size() - 1].length);
 			transpiledSource += " });\n";
 		}
 		else if (v.size() > 0)
 		{
-			transpiledSource += std::to_string(v[0]);
+			transpiledSource += std::string(v[0].start, v[0].length);
 			transpiledSource += ");\n";
 		}
 	}
@@ -426,6 +415,12 @@ void Transpiler::Sphere()
 	MakeSDF(SDF::Type::Sphere);
 }
 
+void Transpiler::Transform()
+{
+	Consume(Token::Type::Transform, "Expect transform statement.");
+	MakeSDF(SDF::Type::Transform);
+}
+
 void Transpiler::MakeSDF(SDF::Type type)
 {
 	Consume(Token::Type::Comma, "Expect comma.");
@@ -440,12 +435,51 @@ void Transpiler::MakeSDF(SDF::Type type)
 		sdf.params.emplace_back();
 		do
 		{
-			Consume(Token::Type::Number, "Expect number.");
-			sdf.params.back().push_back(std::strtof(previous.start, nullptr));
+			switch (current.type)
+			{
+			case Token::Type::Number:
+				Consume(Token::Type::Number, "Expect number.");
+				break;
+
+			case Token::Type::String:
+				Consume(Token::Type::String, "Expect identifier.");
+				break;
+
+				ErrorAtCurrent("Expect number or identifier.");
+			}
+			sdf.params.back().push_back(previous);
 			if (current.type == Token::Type::Comma) { Consume(Token::Type::Comma, "Expect comma."); }
-		} while (current.type == Token::Type::Number);
+		} while (current.type == Token::Type::Number || current.type == Token::Type::String);
 	} while (current.type == Token::Type::Param);
 	sdfs.push_back(sdf);
+}
+
+void Transpiler::MakeMatInternal()
+{
+	while (current.type == Token::Type::String || current.type == Token::Type::Ampersand || current.type == Token::Type::Pipe || current.type == Token::Type::Minus || current.type == Token::Type::OpenParen || current.type == Token::Type::CloseParen)
+	{
+		Advance();
+		if (previous.type == Token::Type::String)
+		{
+			if (current.type != Token::Type::OpenParen)
+			{
+				bool found = false;
+				for (int i = 0; i < sdfs.size(); i++)
+				{
+					if (sdfs[i].length == previous.length && strncmp(sdfs[i].start, previous.start, previous.length) == 0)
+					{
+						found = true;
+						break;
+					}
+				}
+				if (!found) { Error("Undeclared SDF name."); }
+			}
+			else
+			{
+				MakeMatInternal();
+			}
+		}
+	};
 }
 
 void Transpiler::Advance()

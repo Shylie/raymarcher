@@ -31,9 +31,11 @@ Token Lexer::ScanToken()
 	case '>': return MakeToken(Token::Type::Param);
 	case '&': return MakeToken(Token::Type::Ampersand);
 	case '|': return MakeToken(Token::Type::Pipe);
-	case '(':
-	case ')':
-		return MakeToken(Token::Type::Paren);
+	case '(': return MakeToken(Token::Type::OpenParen);
+	case ')': return MakeToken(Token::Type::CloseParen);
+	case '{':
+	case '}':
+		return MakeToken(Token::Type::Brace);
 	case '-':
 		if (Match(IsNum))
 		{
@@ -130,6 +132,7 @@ Token Lexer::MakeToken(Token::Type type) const
 		else if (strncmp(token.start, MATERIAL, token.length) == 0) { token.type = Token::Type::Material; }
 		else if (strncmp(token.start, BOX, token.length) == 0) { token.type = Token::Type::Box; }
 		else if (strncmp(token.start, SPHERE, token.length) == 0) { token.type = Token::Type::Sphere; }
+		else if (strncmp(token.start, TRANSFORM, token.length) == 0) { token.type = Token::Type::Transform; }
 		else if (strncmp(token.start, SDF, token.length) == 0) { token.type = Token::Type::SDF; }
 	}
 
