@@ -134,7 +134,7 @@ int main(int argc, char** argv)
 	if (chunk)
 	{
 		ex = width < chunk ? width : chunk;
-		ey = height < chunk ? height : chunk	;
+		ey = height < chunk ? height : chunk;
 	}
 	else
 	{

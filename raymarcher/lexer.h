@@ -43,12 +43,15 @@ struct Token
 		Ampersand,
 		Pipe,
 		Minus,
-		Paren,
+		OpenParen,
+		CloseParen,
+		Brace,
 		End, // end of source,
 		DeclareMaterials,
 		Material,
 		Box,
 		Sphere,
+		Transform,
 		SDF,
 		Error
 	} type;
@@ -62,7 +65,8 @@ constexpr const char* DECLARE_MATERIALS = "decmat"; // declare material types
 constexpr const char* MATERIAL = "mat"; // declare mat shapes referencing box & sphere tests
 constexpr const char* BOX = "box"; // declare a box test
 constexpr const char* SPHERE = "sph"; // declare a sphere test
-constexpr const char* SDF = "sdf";
+constexpr const char* TRANSFORM = "trf"; // declare a transformation
+constexpr const char* SDF = "sdf"; // declare an sdf
 
 class Lexer
 {

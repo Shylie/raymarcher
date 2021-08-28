@@ -1,6 +1,6 @@
 __device__ int March(Vec origin, Vec direction, Vec& hitPos, Vec& hitNorm)
 {
-	constexpr float TEST_DISTANCE = 0.01f;
+	constexpr float TEST_DISTANCE = 0.0001f;
 
 	int hitType = HT_none;
 	int noHitCount = 0;
@@ -34,7 +34,7 @@ __device__ int March(Vec origin, Vec direction, Vec& hitPos, Vec& hitNorm)
 
 __device__ Vec Trace(Vec origin, Vec direction, xorwow& random)
 {
-	static const int BOUNCE_COUNT = 10;
+	static const int BOUNCE_COUNT = 6;
 	Vec sampledPosition, normal, color, attenuation = 1;
 
 	for (int bc = 0; bc < BOUNCE_COUNT; bc++)

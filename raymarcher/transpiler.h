@@ -21,12 +21,13 @@ private:
 		enum class Type
 		{
 			Box,
-			Sphere
+			Sphere,
+			Transform
 		} type;
 
 		const char* start;
 		int length;
-		std::vector<std::vector<float>> params;
+		std::vector<std::vector<Token>> params;
 	};
 
 	struct Mat
@@ -48,7 +49,10 @@ private:
 
 	void Box();
 	void Sphere();
+	void Transform();
 	void MakeSDF(SDF::Type type);
+
+	void MakeMatInternal();
 
 	void Advance();
 	void Consume(Token::Type type, const char* message);

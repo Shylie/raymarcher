@@ -11,6 +11,9 @@
 
 __device__ inline float Min(float a, float b) { return a < b ? a : b; }
 __device__ inline float Max(float a, float b) { return a > b ? a : b; }
+constexpr float PI = 3.1415926535897932384626433832795028841971693993751f;
+__device__ constexpr float RAD2DEG(float angle) { return 180.0f / PI * angle; }
+__device__ constexpr float DEG2RAD(float angle) { return PI / 180.0f * angle; }
 
 struct xorwow
 {
@@ -72,10 +75,10 @@ struct Vec
 
 #undef VEC_OP
 
-	__device__ float operator%(Vec v) const { return X() * v.X() + Y() * v.Y() + Z() * v.Z(); }
-	__device__ Vec operator^(Vec v) const { return Vec(Y() * v.Z() - Z() * v.Y(), Z() * v.X() - X() * v.Z(), X() * v.Y() - Y() * v.X()); }
+	__device__ constexpr float operator%(Vec v) const { return X() * v.X() + Y() * v.Y() + Z() * v.Z(); }
+	__device__ constexpr Vec operator^(Vec v) const { return Vec(Y() * v.Z() - Z() * v.Y(), Z() * v.X() - X() * v.Z(), X() * v.Y() - Y() * v.X()); }
 
-	__device__ Vec operator-() const { return *this * -1; }
+	__device__ constexpr Vec operator-() const { return *this * -1; }
 	__device__ Vec operator!() const { return *this / sqrtf(*this % *this); }
 };
 
@@ -158,9 +161,32 @@ __device__ constexpr auto operator-(T a)
 	return CarveTest<T>(a);
 }
 
+template <typename T>
+struct TransformTest
+{
+	T a;
+	Vec axis;
+	float angle;
+	Vec translation;
+
+	__device__ explicit constexpr TransformTest(T a, Vec translation) : a(a), axis(), angle(0), translation(translation) {}
+	__device__ explicit constexpr TransformTest(T a, Vec axis, float angle) : a(a), axis(axis), angle(DEG2RAD(-angle)), translation() {}
+	__device__ explicit constexpr TransformTest(T a, Vec axis, float angle, Vec translation) : a(a), axis(axis), angle(DEG2RAD(-angle)), translation(translation) {}
+
+	__device__ float operator()(Vec position) const
+	{
+		const float cosAngle = cosf(angle);
+		position -= translation;
+		Vec transformed = position * cosAngle + (!axis ^ position) * sinf(angle) + !axis * ((1 - cosAngle) * (!axis % position));
+		return a(transformed);
+	}
+};
+
 struct BoxTest
 {
 	Vec lower, upper;
+
+	__device__ constexpr BoxTest(Vec sz) : BoxTest(-sz / 2, sz / 2) {}
 
 	__device__ constexpr BoxTest(Vec lower, Vec upper) : lower(lower), upper(upper)
 	{
@@ -188,6 +214,7 @@ struct SphereTest
 	Vec center;
 	float radius;
 
+	__device__ constexpr SphereTest(float radius) : SphereTest(0, radius) {}
 	__device__ constexpr SphereTest(Vec center, float radius) : center(center), radius(radius) { }
 
 	__device__ float operator()(Vec position) const
