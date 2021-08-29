@@ -45,7 +45,7 @@ mat,wall
 mat,metal
 > metalbox
 
-// just use the glass SDF as is
+// subtract the metal sdf from the glass sdf so that the metal shows up inside the glass properly
 mat,glass
 > glasssph - metalbox
 
