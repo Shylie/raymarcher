@@ -24,16 +24,7 @@ bool Transpiler::Transpile(CUdevice& cuDevice, CUmodule& cuModule, const char*& 
 
 	do
 	{
-		Consume(Token::Type::SDF, "Expect sdf statement.");
-		Consume(Token::Type::Comma, "Expect comma.");
-		switch (current.type)
-		{
-		case Token::Type::Box: Box(); break;
-		case Token::Type::Sphere: Sphere(); break;
-		case Token::Type::Transform: Transform(); break;
-		default: ErrorAtCurrent("Expect a valid SDF identifier."); break;
-		}
-
+		MakeSDF();
 		panicMode = false;
 	} while (current.type == Token::Type::SDF);
 
@@ -106,20 +97,8 @@ MATERIAL_FUNCTION(none);
 	for (int i = 0; i < sdfs.size(); i++)
 	{
 		transpiledSource += "__device__ constexpr ";
-		switch (sdfs[i].type)
-		{
-		case SDF::Type::Box:
-			transpiledSource += "BoxTest ";
-			break;
-
-		case SDF::Type::Sphere:
-			transpiledSource += "SphereTest ";
-			break;
-
-		case SDF::Type::Transform:
-			transpiledSource += "TransformTest ";
-			break;
-		}
+		transpiledSource += SDF_REALNAMES[sdfs[i].sdfIndex];
+		transpiledSource += ' ';
 		transpiledSource += std::string(sdfs[i].start, sdfs[i].length);
 		transpiledSource += '(';
 		for (int j = 0; j < sdfs[i].params.size() - 1; j++)
@@ -403,30 +382,24 @@ MATERIAL_FUNCTION(none);
 	return true;
 }
 
-void Transpiler::Box()
+void Transpiler::MakeSDF()
 {
-	Consume(Token::Type::Box, "Expect box statement.");
-	MakeSDF(SDF::Type::Box);
-}
-
-void Transpiler::Sphere()
-{
-	Consume(Token::Type::Sphere, "Expect sphere statement.");
-	MakeSDF(SDF::Type::Sphere);
-}
-
-void Transpiler::Transform()
-{
-	Consume(Token::Type::Transform, "Expect transform statement.");
-	MakeSDF(SDF::Type::Transform);
-}
-
-void Transpiler::MakeSDF(SDF::Type type)
-{
+	SDF sdf;
+	sdf.sdfIndex = -1;
+	Consume(Token::Type::SDF, "Expect SDF statement.");
 	Consume(Token::Type::Comma, "Expect comma.");
 	Consume(Token::Type::String, "Expect identifier.");
-	SDF sdf;
-	sdf.type = type;
+	for (int i = 0; i < sizeof(SDF_IDENTS) / sizeof(*SDF_IDENTS); i++)
+	{
+		if (strncmp(previous.start, SDF_IDENTS[i], previous.length) == 0)
+		{
+			sdf.sdfIndex = i;
+			break;
+		}
+	}
+	if (sdf.sdfIndex == -1) { Error("Invalid SDF type."); }
+	Consume(Token::Type::Comma, "Expect comma.");
+	Consume(Token::Type::String, "Expect identifier.");
 	sdf.start = previous.start;
 	sdf.length = previous.length;
 	do

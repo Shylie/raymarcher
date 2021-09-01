@@ -130,9 +130,6 @@ Token Lexer::MakeToken(Token::Type type) const
 	{
 		if (strncmp(token.start, DECLARE_MATERIALS, token.length) == 0) { token.type = Token::Type::DeclareMaterials; }
 		else if (strncmp(token.start, MATERIAL, token.length) == 0) { token.type = Token::Type::Material; }
-		else if (strncmp(token.start, BOX, token.length) == 0) { token.type = Token::Type::Box; }
-		else if (strncmp(token.start, SPHERE, token.length) == 0) { token.type = Token::Type::Sphere; }
-		else if (strncmp(token.start, TRANSFORM, token.length) == 0) { token.type = Token::Type::Transform; }
 		else if (strncmp(token.start, SDF, token.length) == 0) { token.type = Token::Type::SDF; }
 	}
 
