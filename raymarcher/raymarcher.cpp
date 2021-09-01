@@ -8,9 +8,6 @@
 #include <cstdint>
 #include <cstdio>
 
-#define RPNG_IMPLEMENTATION
-#include "rpng.h"
-
 #include "utils.h"
 #include "transpiler.h"
 
@@ -23,7 +20,6 @@ int main(int argc, char** argv)
 	int height = 90;
 	float px = 1.0f, py = 1.0f, pz = 1.0f, gx = 0.0f, gy = 0.0f, gz = 0.0f;
 	int samples = 25;
-	char fname[256] = "out.png";
 	char sfname[256] = "";
 
 	bool keepOpen = false;
@@ -65,15 +61,12 @@ int main(int argc, char** argv)
 		else if (sscanf(argv[i], "-c=%u", &chunk))
 		{
 		}
-		else if (sscanf(argv[i], "-f=%255[" VALID_FILENAME_CHARS "]", fname))
-		{
-		}
 		else if (sscanf(argv[i], "-sf=%255[-" VALID_FILENAME_CHARS VALID_FILEPATH_CHARS "]", sfname))
 		{
 		}
 		else
 		{
-			printf("Unknown or invalid argument '%s'\n", argv[i]);
+			fprintf(stderr, "Unknown or invalid argument '%s'\n", argv[i]);
 		}
 	}
 
@@ -103,7 +96,7 @@ int main(int argc, char** argv)
 		}
 		else
 		{
-			printf("Could not open file %s\n", sfname);
+			fprintf(stderr, "Could not open file %s\n", sfname);
 			cuCtxDestroy(context);
 			return -1;
 		}
@@ -111,14 +104,14 @@ int main(int argc, char** argv)
 		Transpiler transpiler(buffer);
 		if (!transpiler.Transpile(cuDevice, cuModule, loweredName))
 		{
-			printf("An error occured during transpilation.\n");
+			fprintf(stderr, "An error occured during transpilation.\n");
 			cuCtxDestroy(context);
 			return -1;
 		}
 	}
 	else
 	{
-		printf("No input scene file\n");
+		fprintf(stderr, "No input scene file\n");
 		cuCtxDestroy(context);
 		return -1;
 	}
@@ -213,30 +206,34 @@ int main(int argc, char** argv)
 
 	float ms;
 	cudaEventElapsedTime(&ms, start, stop);
-	printf("Elapsed time: %4f seconds\n", ms / 1000);
+	fprintf(stderr, "Elapsed time: %4f seconds\n", ms / 1000);
 
-	char* data = new char[width * height * 3];
-
-	for (int y = 0; y < height; y++)
+	printf("P3 %d %d 255\n", width, height);
+	for (int y = height - 1; y >= 0; y--)
 	{
-		for (int x = 0; x < width; x++)
+		for (int x = width - 1; x >= 0; x--)
 		{
-			Vec color = cols[x + y * width] + (14.0f / 241.0f);
-			Vec o = color + 1;
-			color /= o;
+			Vec& color = cols[x + y * width];
+
+			// reinhard tone mapping
+			color += 14.0f / 241.0f;
+			color /= (color + 1);
+
+			// clamping and gamma correction
+			for (int i = 0; i < 3; i++)
+			{
+				if (color[i] > 1.0f) { color[i] = 1.0f; }
+				color[i] = sqrtf(color[i]);
+			}
+
+			// scale to 0-255
 			color *= 255;
 
-			data[((width - x - 1) + (height - y - 1) * width) * 3] = color.X();
-			data[((width - x - 1) + (height - y - 1) * width) * 3 + 1] = color.Y();
-			data[((width - x - 1) + (height - y - 1) * width) * 3 + 2] = color.Z();
+			printf("%d %d %d\n", (int)color.X(), (int)color.Y(), (int)color.Z());
 		}
 	}
 
 	delete[] cols;
-
-	rpng_create_image(fname, data, width, height, 3, 8);
-
-	delete[] data;
 
 	delete[] log;
 	delete[] ptx;
@@ -248,7 +245,7 @@ int main(int argc, char** argv)
 
 	if (keepOpen)
 	{
-		printf("Press any key to exit...\n");
+		fprintf(stderr, "Press any key to exit...\n");
 		getchar();
 	}
 

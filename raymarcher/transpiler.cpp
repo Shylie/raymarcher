@@ -231,7 +231,7 @@ MATERIAL_FUNCTION(none);
 		nvrtcGetProgramLogSize(mainProgram, &logSize);
 		char* log = new char[logSize];
 		nvrtcGetProgramLog(mainProgram, log);
-		printf("Failed to compile generated file:\n%s\n", log);
+		fprintf(stderr, "Failed to compile generated file:\n%s\n", log);
 		nvrtcDestroyProgram(&mainProgram);
 		delete[] log;
 		delete[] matProgs;
@@ -267,7 +267,7 @@ MATERIAL_FUNCTION(none);
 				nvrtcGetProgramLogSize(noneProgram, &logSize);
 				char* log = new char[logSize];
 				nvrtcGetProgramLog(noneProgram, log);
-				printf("Failed to compile material none:\n%s\n", log);
+				fprintf(stderr, "Failed to compile material none:\n%s\n", log);
 				delete[] log;
 				nvrtcDestroyProgram(&mainProgram);
 				nvrtcDestroyProgram(&noneProgram);
@@ -315,7 +315,7 @@ MATERIAL_FUNCTION(none);
 				nvrtcGetProgramLogSize(matProgs[i], &logSize);
 				char* log = new char[logSize];
 				nvrtcGetProgramLog(matProgs[i], log);
-				printf("Failed to compile material file %s:\n%s\n", std::string(mats[i].start, mats[i].length).c_str(), log);
+				fprintf(stderr, "Failed to compile material file %s:\n%s\n", std::string(mats[i].start, mats[i].length).c_str(), log);
 				delete[] log;
 				nvrtcDestroyProgram(&mainProgram);
 				nvrtcDestroyProgram(&noneProgram);
@@ -345,7 +345,7 @@ MATERIAL_FUNCTION(none);
 		}
 		else
 		{
-			printf("Unable to open material file %s.\n", std::string(mats[i].start, mats[i].length).c_str());
+			fprintf(stderr, "Unable to open material file %s.\n", std::string(mats[i].start, mats[i].length).c_str());
 			nvrtcDestroyProgram(&mainProgram);
 			nvrtcDestroyProgram(&noneProgram);
 			for (int j = 0; j < i; j++)
@@ -522,12 +522,12 @@ void Transpiler::ErrorAt(Token& token, const char* errmsg)
 
 	panicMode = true;
 
-	printf("[Line %d] Error", token.line);
+	fprintf(stderr, "[Line %d] Error", token.line);
 
-	if (token.type == Token::Type::End) { printf(" at end"); }
+	if (token.type == Token::Type::End) { fprintf(stderr, " at end"); }
 	else if (token.type == Token::Type::Error) { }
-	else { printf(" at '%.*s'", token.length, token.start); }
+	else { fprintf(stderr, " at '%.*s'", token.length, token.start); }
 
-	printf(": %s\n", errmsg);
+	fprintf(stderr, ": %s\n", errmsg);
 	hadError = true;
 }
