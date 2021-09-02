@@ -28,7 +28,7 @@ jobs:
     - uses: Jimver/cuda-toolkit@v0.2.4
       id: cuda-toolkit
       with:
-        cuda: '11.4'
+        cuda: '11.4.0'
 
     - name: Add MSBuild to PATH
       uses: microsoft/setup-msbuild@v1.0.2
