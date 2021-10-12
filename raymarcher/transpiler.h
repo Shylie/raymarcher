@@ -18,12 +18,7 @@ public:
 private:
 	struct SDF
 	{
-		enum class Type
-		{
-			Box,
-			Sphere,
-			Transform
-		} type;
+		int sdfIndex;
 
 		const char* start;
 		int length;
@@ -47,10 +42,7 @@ private:
 	std::vector<SDF> sdfs;
 	std::vector<Mat> mats;
 
-	void Box();
-	void Sphere();
-	void Transform();
-	void MakeSDF(SDF::Type type);
+	void MakeSDF();
 
 	void MakeMatInternal();
 

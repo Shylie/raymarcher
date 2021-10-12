@@ -24,16 +24,7 @@ bool Transpiler::Transpile(CUdevice& cuDevice, CUmodule& cuModule, const char*& 
 
 	do
 	{
-		Consume(Token::Type::SDF, "Expect sdf statement.");
-		Consume(Token::Type::Comma, "Expect comma.");
-		switch (current.type)
-		{
-		case Token::Type::Box: Box(); break;
-		case Token::Type::Sphere: Sphere(); break;
-		case Token::Type::Transform: Transform(); break;
-		default: ErrorAtCurrent("Expect a valid SDF identifier."); break;
-		}
-
+		MakeSDF();
 		panicMode = false;
 	} while (current.type == Token::Type::SDF);
 
@@ -106,20 +97,8 @@ MATERIAL_FUNCTION(none);
 	for (int i = 0; i < sdfs.size(); i++)
 	{
 		transpiledSource += "__device__ constexpr ";
-		switch (sdfs[i].type)
-		{
-		case SDF::Type::Box:
-			transpiledSource += "BoxTest ";
-			break;
-
-		case SDF::Type::Sphere:
-			transpiledSource += "SphereTest ";
-			break;
-
-		case SDF::Type::Transform:
-			transpiledSource += "TransformTest ";
-			break;
-		}
+		transpiledSource += SDF_REALNAMES[sdfs[i].sdfIndex];
+		transpiledSource += ' ';
 		transpiledSource += std::string(sdfs[i].start, sdfs[i].length);
 		transpiledSource += '(';
 		for (int j = 0; j < sdfs[i].params.size() - 1; j++)
@@ -231,7 +210,7 @@ MATERIAL_FUNCTION(none);
 		nvrtcGetProgramLogSize(mainProgram, &logSize);
 		char* log = new char[logSize];
 		nvrtcGetProgramLog(mainProgram, log);
-		printf("Failed to compile generated file:\n%s\n", log);
+		fprintf(stderr, "Failed to compile generated file:\n%s\n", log);
 		nvrtcDestroyProgram(&mainProgram);
 		delete[] log;
 		delete[] matProgs;
@@ -267,7 +246,7 @@ MATERIAL_FUNCTION(none);
 				nvrtcGetProgramLogSize(noneProgram, &logSize);
 				char* log = new char[logSize];
 				nvrtcGetProgramLog(noneProgram, log);
-				printf("Failed to compile material none:\n%s\n", log);
+				fprintf(stderr, "Failed to compile material none:\n%s\n", log);
 				delete[] log;
 				nvrtcDestroyProgram(&mainProgram);
 				nvrtcDestroyProgram(&noneProgram);
@@ -315,7 +294,7 @@ MATERIAL_FUNCTION(none);
 				nvrtcGetProgramLogSize(matProgs[i], &logSize);
 				char* log = new char[logSize];
 				nvrtcGetProgramLog(matProgs[i], log);
-				printf("Failed to compile material file %s:\n%s\n", std::string(mats[i].start, mats[i].length).c_str(), log);
+				fprintf(stderr, "Failed to compile material file %s:\n%s\n", std::string(mats[i].start, mats[i].length).c_str(), log);
 				delete[] log;
 				nvrtcDestroyProgram(&mainProgram);
 				nvrtcDestroyProgram(&noneProgram);
@@ -345,7 +324,7 @@ MATERIAL_FUNCTION(none);
 		}
 		else
 		{
-			printf("Unable to open material file %s.\n", std::string(mats[i].start, mats[i].length).c_str());
+			fprintf(stderr, "Unable to open material file %s.\n", std::string(mats[i].start, mats[i].length).c_str());
 			nvrtcDestroyProgram(&mainProgram);
 			nvrtcDestroyProgram(&noneProgram);
 			for (int j = 0; j < i; j++)
@@ -403,30 +382,24 @@ MATERIAL_FUNCTION(none);
 	return true;
 }
 
-void Transpiler::Box()
+void Transpiler::MakeSDF()
 {
-	Consume(Token::Type::Box, "Expect box statement.");
-	MakeSDF(SDF::Type::Box);
-}
-
-void Transpiler::Sphere()
-{
-	Consume(Token::Type::Sphere, "Expect sphere statement.");
-	MakeSDF(SDF::Type::Sphere);
-}
-
-void Transpiler::Transform()
-{
-	Consume(Token::Type::Transform, "Expect transform statement.");
-	MakeSDF(SDF::Type::Transform);
-}
-
-void Transpiler::MakeSDF(SDF::Type type)
-{
+	SDF sdf;
+	sdf.sdfIndex = -1;
+	Consume(Token::Type::SDF, "Expect SDF statement.");
 	Consume(Token::Type::Comma, "Expect comma.");
 	Consume(Token::Type::String, "Expect identifier.");
-	SDF sdf;
-	sdf.type = type;
+	for (int i = 0; i < sizeof(SDF_IDENTS) / sizeof(*SDF_IDENTS); i++)
+	{
+		if (strncmp(previous.start, SDF_IDENTS[i], previous.length) == 0)
+		{
+			sdf.sdfIndex = i;
+			break;
+		}
+	}
+	if (sdf.sdfIndex == -1) { Error("Invalid SDF type."); }
+	Consume(Token::Type::Comma, "Expect comma.");
+	Consume(Token::Type::String, "Expect identifier.");
 	sdf.start = previous.start;
 	sdf.length = previous.length;
 	do
@@ -522,12 +495,12 @@ void Transpiler::ErrorAt(Token& token, const char* errmsg)
 
 	panicMode = true;
 
-	printf("[Line %d] Error", token.line);
+	fprintf(stderr, "[Line %d] Error", token.line);
 
-	if (token.type == Token::Type::End) { printf(" at end"); }
+	if (token.type == Token::Type::End) { fprintf(stderr, " at end"); }
 	else if (token.type == Token::Type::Error) { }
-	else { printf(" at '%.*s'", token.length, token.start); }
+	else { fprintf(stderr, " at '%.*s'", token.length, token.start); }
 
-	printf(": %s\n", errmsg);
+	fprintf(stderr, ": %s\n", errmsg);
 	hadError = true;
 }
