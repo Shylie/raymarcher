@@ -204,8 +204,8 @@ MATERIAL_FUNCTION(none);
 	nvrtcAddNameExpression(mainProgram, "Render");
 
 	char versionOption[20]{ '\0' };
-	int major;
-	int minor;
+	int major = 5;
+	int minor = 2;
 	cuDeviceGetAttribute(&major, CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MAJOR, cuDevice);
 	cuDeviceGetAttribute(&minor, CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MINOR, cuDevice);
 
