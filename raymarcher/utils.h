@@ -184,28 +184,29 @@ struct TransformTest
 
 struct BoxTest
 {
-	Vec lower, upper;
+	Vec p, s;
 
-	__device__ constexpr BoxTest(Vec sz) : BoxTest(-sz / 2, sz / 2) {}
+	__device__ constexpr BoxTest(Vec sz) : BoxTest(-sz, sz) {}
 
-	__device__ constexpr BoxTest(Vec lower, Vec upper) : lower(lower), upper(upper)
+	__device__ constexpr BoxTest(Vec lower, Vec upper) : p((upper + lower) / 2), s((upper - lower) / 2)
 	{
 		for (int i = 0; i < 3; i++)
 		{
-			if (lower[i] > upper[i])
-			{
-				float tmp = lower[i];
-				lower[i] = upper[i];
-				upper[i] = tmp;
-			}
+			if (s[i] < 0.0f) { s[i] = -s[i]; }
 		}
 	}
 
 	__device__ float operator()(Vec position) const
 	{
-		Vec offsetLower = position - lower;
-		Vec offsetUpper = upper - position;
-		return -Min(Min(Min(offsetLower.X(), offsetUpper.X()), Min(offsetLower.Y(), offsetUpper.Y())), Min(offsetLower.Z(), offsetUpper.Z()));
+		position -= p;
+		for (int i = 0; i < 3; i++)
+		{
+			position[i] = fabsf(position[i]);
+		}
+		position -= s;
+		
+		Vec tmp(Max(position.X(), 0), Max(position.Y(), 0), Max(position.Z(), 0));
+		return sqrtf(tmp % tmp) + Min(Max(position.X(), Max(position.Y(), position.Z())), 0);
 	}
 };
 
@@ -222,6 +223,20 @@ struct SphereTest
 		Vec delta = center - position;
 		float distance = sqrtf(delta % delta);
 		return distance - radius;
+	}
+};
+
+template <typename T>
+struct RoundTest
+{
+	T a;
+	float r;
+
+	__device__ explicit constexpr RoundTest(T a, float r) : a(a), r(r) {}
+
+	__device__ float operator()(Vec position) const
+	{
+		return a(position) - r;
 	}
 };
 

@@ -49,9 +49,6 @@ struct Token
 		End, // end of source,
 		DeclareMaterials,
 		Material,
-		Box,
-		Sphere,
-		Transform,
 		SDF,
 		Error
 	} type;
@@ -63,10 +60,22 @@ struct Token
 
 constexpr const char* DECLARE_MATERIALS = "decmat"; // declare material types
 constexpr const char* MATERIAL = "mat"; // declare mat shapes referencing box & sphere tests
-constexpr const char* BOX = "box"; // declare a box test
-constexpr const char* SPHERE = "sph"; // declare a sphere test
-constexpr const char* TRANSFORM = "trf"; // declare a transformation
 constexpr const char* SDF = "sdf"; // declare an sdf
+constexpr const char* SDF_IDENTS[] =
+{
+	"box",
+	"sph",
+	"trf",
+	"rnd"
+};
+constexpr const char* SDF_REALNAMES[] =
+{
+	"BoxTest",
+	"SphereTest",
+	"TransformTest",
+	"RoundTest"
+};
+static_assert(sizeof(SDF_IDENTS) / sizeof(*SDF_IDENTS) == sizeof(SDF_REALNAMES) / sizeof(*SDF_REALNAMES), "Name map arrays must have same length");
 
 class Lexer
 {

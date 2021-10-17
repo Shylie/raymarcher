@@ -3,8 +3,8 @@ decmat,wall,metal,glass,sun
 
 // define shape of sunbox
 sdf,box,sunbox
-> -3.15,4.8,-3.15
-> 3.15,5,3.15
+> -2.45,4.8,-2.45
+> 2.45,5,2.45
 
 // sunbox cover outer ring
 sdf,box,sunboxcover
@@ -24,17 +24,22 @@ sdf,box,wallbox
 // glass sphere shape
 sdf,sph,glasssph
 > 0,1.7,1
-> 0.75
+> 0.85
 
 // metal box shape (not transformed)
 // uses alternate constructor without position information
 sdf,box,metalbox_nt
-> 1,1,1
+> 0.4,0.4,0.4
+
+// rounded metal box
+sdf,rnd,metalbox_r
+> metalbox_nt
+> 0.05
 
 sdf,trf,metalbox
-> metalbox_nt
+> metalbox_r
 > 1,0.65,0.8
-> 60
+> 55
 > -0.2,1.3,1.2
 
 // define the CSG interactions between the SDFs for the walls
@@ -45,7 +50,7 @@ mat,wall
 mat,metal
 > metalbox
 
-// just use the glass SDF as is
+// subtract the metal sdf from the glass sdf so that the metal shows up inside the glass properly
 mat,glass
 > glasssph - metalbox
 

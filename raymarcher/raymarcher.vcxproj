@@ -121,7 +121,6 @@
     <ClInclude Include="Materials\none.h" />
     <ClInclude Include="Materials\sun.h" />
     <ClInclude Include="Materials\wall.h" />
-    <ClInclude Include="rpng.h" />
     <ClInclude Include="transpiler.h" />
     <ClInclude Include="utils.h" />
     <ClInclude Include="utils_end.h" />
