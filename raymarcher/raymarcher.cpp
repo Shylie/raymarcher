@@ -16,10 +16,11 @@
 
 int main(int argc, char** argv)
 {
-	int width = 160;
-	int height = 90;
+	int width = 320;
+	int height = 180;
 	float px = 1.0f, py = 1.0f, pz = 1.0f, gx = 0.0f, gy = 0.0f, gz = 0.0f;
-	int samples = 25;
+	int samples = 50;
+	int bounceCount = 6;
 	char sfname[256] = "";
 
 	bool keepOpen = false;
@@ -53,6 +54,10 @@ int main(int argc, char** argv)
 			gx = tx;
 			gy = ty;
 			gz = tz;
+		}
+		else if (sscanf(argv[i], "-bc=%u", &tmp) && tmp > 0)
+		{
+			bounceCount = tmp;
 		}
 		else if (strlen(argv[i]) == strlen("-k") && strncmp(argv[i], "-k", strlen("-k")) == 0)
 		{
@@ -140,7 +145,7 @@ int main(int argc, char** argv)
 
 	CUdeviceptr deviceCols;
 	cuMemAlloc(&deviceCols, width * height * sizeof(Vec));
-	void* args[] = { &deviceCols, &width, &height, &samples, &position, &goal, &left, &up, &sx, &sy, &ex, &ey };
+	void* args[] = { &deviceCols, &width, &height, &samples, &bounceCount, &position, &goal, &left, &up, &sx, &sy, &ex, &ey };
 
 	CUevent start, stop;
 	cuEventCreate(&start, CU_EVENT_DEFAULT);

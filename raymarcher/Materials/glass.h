@@ -1,6 +1,6 @@
 #include "utils.h"
 
-__device__ bool glass(Vec& origin, Vec& direction, Vec& color, Vec& attenuation, Vec sampledPosition, Vec normal, xorwow& random)
+__device__ bool glass(Vec origin, Vec& direction, Vec& color, Vec& attenuation, Vec sampledPosition, Vec normal, xorwow& random)
 {
 	static constexpr float REFRACTION_INDEX = 1.54f;
 	static constexpr float R0 = (1.0f - REFRACTION_INDEX) / (1.0f + REFRACTION_INDEX);

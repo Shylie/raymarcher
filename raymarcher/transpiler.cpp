@@ -74,8 +74,8 @@ bool Transpiler::Transpile(CUdevice& cuDevice, CUmodule& cuModule, const char*& 
 	MATERIAL_FUNCTION(None);
 	*/
 	std::string transpiledSource = R"(#include "utils.h"
-typedef bool (*MaterialFn)(Vec& origin, Vec& direction, Vec& color, Vec& attenuation, Vec sampledPosition, Vec normal, xorwow& random);
-#define MATERIAL_FUNCTION(name) __device__ extern bool name##(Vec& origin, Vec& direction, Vec& color, Vec& attenuation, Vec sampledPosition, Vec normal, xorwow& random);
+typedef bool (*MaterialFn)(Vec origin, Vec& direction, Vec& color, Vec& attenuation, Vec sampledPosition, Vec normal, xorwow& random);
+#define MATERIAL_FUNCTION(name) __device__ extern bool name##(Vec origin, Vec& direction, Vec& color, Vec& attenuation, Vec sampledPosition, Vec normal, xorwow& random);
 MATERIAL_FUNCTION(none);
 )"s;
 

@@ -1,6 +1,6 @@
 #include "utils.h"
 
-__device__ bool wall(Vec& origin, Vec& direction, Vec& color, Vec& attenuation, Vec sampledPosition, Vec normal, xorwow& random)
+__device__ bool wall(Vec origin, Vec& direction, Vec& color, Vec& attenuation, Vec sampledPosition, Vec normal, xorwow& random)
 {
 	float p = 6.283185f * random();
 	float c = random();
