@@ -75,7 +75,7 @@
       </Command>
     </PostBuildEvent>
     <PreBuildEvent>
-      <Command>xcopy /d /y $(ProjectDir)utils*.h $(OutDir) &amp;&amp; xcopy /d /y $(ProjectDir)materials\*.* $(OutDir)</Command>
+      <Command>xcopy /d /y $(ProjectDir)utils*.h $(OutDir)</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -106,7 +106,7 @@
       </Command>
     </PostBuildEvent>
     <PreBuildEvent>
-      <Command>xcopy /d /y $(ProjectDir)utils*.h $(OutDir) &amp;&amp; xcopy /d /y $(ProjectDir)materials\*.* $(OutDir)</Command>
+      <Command>xcopy /d /y $(ProjectDir)utils*.h $(OutDir)</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -116,11 +116,11 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="lexer.h" />
-    <ClInclude Include="Materials\glass.h" />
-    <ClInclude Include="Materials\metal.h" />
-    <ClInclude Include="Materials\none.h" />
-    <ClInclude Include="Materials\sun.h" />
-    <ClInclude Include="Materials\wall.h" />
+    <CopyFileToFolders Include="Materials\glass.h" />
+    <CopyFileToFolders Include="Materials\metal.h" />
+    <CopyFileToFolders Include="Materials\none.h" />
+    <CopyFileToFolders Include="Materials\sun.h" />
+    <CopyFileToFolders Include="Materials\wall.h" />
     <ClInclude Include="transpiler.h" />
     <ClInclude Include="utils.h" />
     <ClInclude Include="utils_end.h" />

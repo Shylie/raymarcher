@@ -5,21 +5,6 @@
     <ClInclude Include="utils_end.h" />
     <ClInclude Include="lexer.h" />
     <ClInclude Include="transpiler.h" />
-    <ClInclude Include="Materials\glass.h">
-      <Filter>Materials</Filter>
-    </ClInclude>
-    <ClInclude Include="Materials\metal.h">
-      <Filter>Materials</Filter>
-    </ClInclude>
-    <ClInclude Include="Materials\none.h">
-      <Filter>Materials</Filter>
-    </ClInclude>
-    <ClInclude Include="Materials\sun.h">
-      <Filter>Materials</Filter>
-    </ClInclude>
-    <ClInclude Include="Materials\wall.h">
-      <Filter>Materials</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="raymarcher.cpp" />
@@ -40,6 +25,21 @@
     </CopyFileToFolders>
     <CopyFileToFolders Include="Scenes\demo2.txt">
       <Filter>Scenes</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="Materials\glass.h">
+      <Filter>Materials</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="Materials\metal.h">
+      <Filter>Materials</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="Materials\none.h">
+      <Filter>Materials</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="Materials\sun.h">
+      <Filter>Materials</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="Materials\wall.h">
+      <Filter>Materials</Filter>
     </CopyFileToFolders>
   </ItemGroup>
 </Project>
