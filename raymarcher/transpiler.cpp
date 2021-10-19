@@ -294,7 +294,7 @@ MATERIAL_FUNCTION(none);
 				nvrtcGetProgramLogSize(matProgs[i], &logSize);
 				char* log = new char[logSize];
 				nvrtcGetProgramLog(matProgs[i], log);
-				fprintf(stderr, "Failed to compile material file %s:\n%s\n", std::string(mats[i].start, mats[i].length).c_str(), log);
+				fprintf(stderr, "Failed to compile material file '%s':\n%s\n", std::string(mats[i].start, mats[i].length).c_str(), log);
 				delete[] log;
 				nvrtcDestroyProgram(&mainProgram);
 				nvrtcDestroyProgram(&noneProgram);
@@ -324,7 +324,7 @@ MATERIAL_FUNCTION(none);
 		}
 		else
 		{
-			fprintf(stderr, "Unable to open material file %s.\n", std::string(mats[i].start, mats[i].length).c_str());
+			fprintf(stderr, "Unable to open material file '%s'.\n", std::string(mats[i].start, mats[i].length).c_str());
 			nvrtcDestroyProgram(&mainProgram);
 			nvrtcDestroyProgram(&noneProgram);
 			for (int j = 0; j < i; j++)
@@ -344,19 +344,29 @@ MATERIAL_FUNCTION(none);
 		}
 	}
 
-	CUlinkState linkState;
-	cuLinkCreate(0, nullptr, nullptr, &linkState);
+	char log[4096] = {};
+	unsigned int logSize = sizeof(log) / sizeof(*log);
+	CUjit_option options[2] = { CU_JIT_ERROR_LOG_BUFFER, CU_JIT_ERROR_LOG_BUFFER_SIZE_BYTES };
+	void* optionValues[sizeof(options) / sizeof(*options)] = { log, &logSize };
 
+	CUlinkState linkState;
+	cuLinkCreate(sizeof(options) / sizeof(*options), options, optionValues, &linkState);
+
+	bool linkFailed = false;
 	CUresult res = cuLinkAddData(linkState, CU_JIT_INPUT_PTX, mainPTX, mainPTXsize, "QuerySceneUserFn", 0, nullptr, nullptr);
+	if (res != CUDA_SUCCESS) { linkFailed = true; }
 	res = cuLinkAddData(linkState, CU_JIT_INPUT_PTX, nonePTX, nonePTXsize, "none", 0, nullptr, nullptr);
+	if (res != CUDA_SUCCESS) { linkFailed = true; }
 	for (int i = 0; i < mats.size(); i++)
 	{
 		res = cuLinkAddData(linkState, CU_JIT_INPUT_PTX, matPTX[i], matPTXsize[i], std::string(mats[i].start, mats[i].length).c_str(), 0, nullptr, nullptr);
+		if (res != CUDA_SUCCESS) { linkFailed = true; }
 	}
 
 	char* image;
 	size_t cubinSize;
 	res = cuLinkComplete(linkState, (void**)&image, &cubinSize);
+	if (res != CUDA_SUCCESS) { linkFailed = true; }
 
 	cuModuleLoadData(&cuModule, image);
 
@@ -379,7 +389,15 @@ MATERIAL_FUNCTION(none);
 	delete[] nonePTX;
 	delete[] mainPTX;
 
-	return true;
+	if (linkFailed)
+	{
+		fprintf(stderr, "Linking failed: %s\n", log);
+		return false;
+	}
+	else
+	{
+		return true;
+	}
 }
 
 void Transpiler::MakeSDF()
