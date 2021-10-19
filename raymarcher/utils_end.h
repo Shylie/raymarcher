@@ -41,7 +41,7 @@ __device__ Vec Trace(Vec origin, Vec direction, int bounceCount, xorwow& random)
 		int hitType = March(origin, direction, sampledPosition, normal);
 		if (materials[hitType](origin, direction, color, attenuation, sampledPosition, normal, random))
 		{
-			origin = sampledPosition + direction * 0.1f;
+			origin = sampledPosition + direction * 0.01f;
 		}
 		else
 		{
