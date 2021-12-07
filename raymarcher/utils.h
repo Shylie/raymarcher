@@ -15,6 +15,19 @@ constexpr float PI = 3.1415926535897932384626433832795028841971693993751f;
 __device__ constexpr float RAD2DEG(float angle) { return 180.0f / PI * angle; }
 __device__ constexpr float DEG2RAD(float angle) { return PI / 180.0f * angle; }
 
+namespace detail
+{
+	__device__ constexpr float sqrtfNewtonRaphson(float x, float curr, float prev)
+	{
+		return curr == prev ? curr : sqrtfNewtonRaphson(x, 0.5f * (curr + x / curr), curr);
+	}
+}
+
+__device__ constexpr float csqrtf(float x)
+{
+	return detail::sqrtfNewtonRaphson(x, x, 0);
+}
+
 struct xorwow
 {
 	unsigned int a, b, c, d, e, counter;
@@ -80,6 +93,7 @@ struct Vec
 
 	__device__ constexpr Vec operator-() const { return *this * -1; }
 	__device__ Vec operator!() const { return *this / sqrtf(*this % *this); }
+	__device__ constexpr Vec normalized() const { return *this / csqrtf(*this % *this); }
 };
 
 template <typename T, typename U>
@@ -170,14 +184,14 @@ struct TransformTest
 	Vec translation;
 
 	__device__ explicit constexpr TransformTest(T a, Vec translation) : a(a), axis(), angle(0), translation(translation) {}
-	__device__ explicit constexpr TransformTest(T a, Vec axis, float angle) : a(a), axis(axis), angle(DEG2RAD(-angle)), translation() {}
-	__device__ explicit constexpr TransformTest(T a, Vec axis, float angle, Vec translation) : a(a), axis(axis), angle(DEG2RAD(-angle)), translation(translation) {}
+	__device__ explicit constexpr TransformTest(T a, Vec axis, float angle) : a(a), axis(axis.normalized()), angle(DEG2RAD(-angle)), translation() {}
+	__device__ explicit constexpr TransformTest(T a, Vec axis, float angle, Vec translation) : a(a), axis(axis.normalized()), angle(DEG2RAD(-angle)), translation(translation) {}
 
 	__device__ float operator()(Vec position) const
 	{
 		const float cosAngle = cosf(angle);
 		position -= translation;
-		Vec transformed = position * cosAngle + (!axis ^ position) * sinf(angle) + !axis * ((1 - cosAngle) * (!axis % position));
+		Vec transformed = position * cosAngle + (axis ^ position) * sinf(angle) + axis * ((1 - cosAngle) * (axis % position));
 		return a(transformed);
 	}
 };
