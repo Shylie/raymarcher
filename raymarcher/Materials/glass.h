@@ -24,7 +24,5 @@ __device__ bool glass(Vec origin, Vec& direction, Vec& color, Vec& attenuation, 
 		direction = rOutPerp + rOutParallel;
 	}
 
-	origin = sampledPosition + direction * 0.1f;
-
 	return true;
 }
